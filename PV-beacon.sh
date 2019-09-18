@@ -24,8 +24,6 @@ aktZ="${hour}:${minute}"
 datei="/tmp/PV_Ertrag.txt"
 datei_nc="/tmp/nc_PV_Ertrag.txt"
 call="DL7ATA"
-long="5234.25"
-lat="01313.98"
 
 # Per cronjob erstellte Auf- und Untergangszeiten lesen und aufbereiten aus Datei...
 dateiSo="/tmp/sunset.txt"
@@ -33,7 +31,6 @@ t=$(cat $dateiSo)
 auf=$(echo ${t:0:5})
 unter=$(echo ${t:6:5})
 delta=$(( $(date -d "$aktZ" +%s) - $(date -d "$unter" +%s) ))
-utc=$(date -u +%H%M%S)
 
 # Nur bei Helligkeit hell ausführen
 if [ $(date -d "$aktZ" +%s) -ge $(date -d "$auf" +%s) ] &&  [ $(date -d "$aktZ" +%s) -le $(date -d "$unter" +%s) ]
@@ -43,13 +40,11 @@ if [ $(date -d "$aktZ" +%s) -ge $(date -d "$auf" +%s) ] &&  [ $(date -d "$aktZ" 
    wh=$(cat $datei | cut -d" " -f4)
    VA=$(cat $datei | cut -d" " -f8)
    delta=$(echo "$wh-$VA" | bc -l)
-   text="Solarpower ${amp}A, ${volt}V, ${wh}Wh, Delta ${delta}Wh"
+   text="Solarpower $amp Ampere, $volt Volt, $wh Wh, Delta $delta Wh"
    call=$(printf "%-9s\n" "$call" | tr [:lower:]äöü [:upper:]ÄÖÜ)
-   z1="user DL7ATA pass 21678"
-   z2="DL7ATA-11>AP7PV,TCPIP*,DB0TGO-14::$call:$text"
-   # z3="DL7ATA-11>AP7PV,TCPIP*:@${utc}h${long}NA${lat}EUSolarenergy powering DB0TGO"
-   # echo -e "${z1}\n${z2}\n${z3}" > $datei_nc
-   echo -e "${z1}\n${z2}\n" > $datei_nc
+   z1="user DL7ATA pass *****"
+   z2="DL7ATA-11>APRS,TCPIP*,DB0TGO-14::$call:$text"
+   echo -e "${z1}\n${z2}" > $datei_nc
 
    # Falls Hamnet nicht erreichbar, APRS via Internet benutzen
    if ping -c 1 -w 1 $zielH > /dev/null; then
