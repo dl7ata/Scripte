@@ -1,7 +1,8 @@
 # Scripte
-Linux Scripte, überwiegend bash für 
+Linux Bash-Scriptesammlung für 
 - svxlink
 - APRS
-- Linux-System.
+- Linux-System
+sowie Scripte, die Rahmen eines Photovoltaik-Projektes geschrieben wurden.
 
-Ein kurzer hinweis sollte zu Beginn des Scripts stehen
+Ein kurzer hinweis sollte zu Beginn des jeweiligen Scripts stehen
