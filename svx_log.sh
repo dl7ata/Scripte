@@ -8,17 +8,16 @@
 PFAD='/var/log/'
 DATEI='svxlink'
 KUM_LOG='/home/svxlink/svx-log/'
-#---------------------------------------------------
-lfd_monat=$(date +%y%m)
 KUM_LOGPFAD="${KUM_LOG}svx_log.$lfd_monat.log"
 LOGFILE=${PFAD}${DATEI}
-#---------------------------------------------------
+
 S1=" CONNECTED"
 S2="Incoming"
 S3="Accepting"
 S4=" DISCONNECTED"
 declare -a log_array
 typeset -i i=0
+lfd_monat=$(date +%y%m)
 
 LOGFILE=${PFAD}${DATEI}
 
