@@ -3,6 +3,7 @@
 # Script zur Suche nach Wetterwarnunggen vom DWD anhand einer Region (z.B. BXXX=Berlin)
 # Quelle: https://www.dwd.de/DE/leistungen/opendata/help/inhalt_allgemein/opendata_content_de_en_xls.xls?__blob=publicationFile&v=18
 #
+# 29.09.2019	Meldung "Vorabinformation" -> Kleinbuchstaben und Text kürzen
 # 17.09.2019	Meldung kürzen und "bis_text" suchen
 # 19.05.2019	Umstellung von Mary auf Google-TTS
 # 02.02.2019	Meldung von ISO nach UTF umwandeln wg. Umlauten bei Mary
@@ -63,10 +64,21 @@ for item in $array; do
 		   then
 		   #Audioaufbereitung
 		   #In dieser Variablen steckt die gesamte Nachricht die von MARY in eine WAV gewandelt werden soll
-		   messageT=$(cat $PFAD/wx_msg/dwd_msg.$ort | sed -n "/Amtliche/,//p" | sed -e 's/^[ \t]*//;s/m\/s/ meter pro sekunde /g;s/kn/ Knoten /g;s/Bft/Boo Fohr/g;s/l\/m\²/Liter pro Quadratmeter/g' |  sed '$d')
+		   messageT=$(cat $PFAD/wx_msg/dwd_msg.$ort | \
+			sed -n "/Amtliche/,//p" | \
+			sed -e 's/^[ \t]*//;s/m\/s/ meter pro sekunde /g;s/kn/ Knoten /g;s/Bft/Boo Fohr/g;s/l\/m\²/Liter pro Quadratmeter/g' | \
+			sed '$d')
+
 		elif  [[ $warn == "WD" ]]
 		   then
-		   messageT=$(cat $PFAD/wx_msg/dwd_msg.$ort | sed -n "/VORABINFORMATION/,//p" | sed -e 's/^[ \t]*//;s/m\/s/ meter pro sekunde /g;s/kn/ Knoten /g;s/Bft/Beaufort/g;s/l\/qm/ Liter pro Quadratmeter/g' | sed '$d')
+    		   bis_text="Dies"
+		   messageT=$(cat $PFAD/wx_msg/dwd_msg.$ort | \
+			sed -n "/VORABINFORMATION/,//p" | \
+			sed -e 's/^[ \t]*//;s/m\/s/ meter pro sekunde /g;s/kn/ Knoten /g;s/Bft/Beaufort/g;s/l\/qm/ Liter pro Quadratmeter/g' | \
+			sed "/${bis_text}/,//d" | tr "[A-Z]" "[a-z]")
+		else
+		   echo "Typ $warn unbekannt - beende"
+		   exit
 		fi
 
 		# Prüfen ob es sich um eine AUFHEBUNG handelt
