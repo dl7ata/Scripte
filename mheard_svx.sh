@@ -1,7 +1,8 @@
 #!/bin/bash
 # mheard_svx.sh
 # Suche nach letztem Logeintrag/gehört von Call
-# 26.09.2019	DL7ATA
+# Aufruf des Scripts mit "./mheard_svx.sh n0call"
+# 26.09.2019    DL7ATA
 
 mheard=$(echo $1 | tr '[:lower:]' '[:upper:]')
 logdatei=/var/log/svxlink
@@ -15,5 +16,5 @@ else
    beginn=$(head -1 $logdatei | cut -c1-19)
    echo -e "$mheard nicht gehört seit $beginn"
 fi
-exit 0
 
+exit 0
