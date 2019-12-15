@@ -13,9 +13,9 @@ if [ -z "$v1" ]; then
 fi
 
 call=$v1
-text="$v2 $d"	#"Max, Du bist der Tollste! $d"
+text="$v2 $d"	
 adr="http://www.hampager.de:8080/calls"
-cmd="curl -H \"Content-Type: application/json\" -X POST -u dl7ata:GDuzXcLmaf3R9RgrDvuC -d '{ \"text\": \"DL7ATA: $text\", \"callSignNames\": [\"$call\"], \"transmitterGroupNames\": [\"dl-be\"], \"emergency\": false }' $adr"
+cmd="curl -H \"Content-Type: application/json\" -X POST -u dl7ata:*********** -d '{ \"text\": \"DL7ATA: $text\", \"callSignNames\": [\"$call\"], \"transmitterGroupNames\": [\"dl-be\"], \"emergency\": false }' $adr"
 echo $cmd
 eval $cmd
 
