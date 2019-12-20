@@ -4,7 +4,7 @@
 # Voraussetzung:
 # Deb-Paket "jq" muss installiert sein (apt-get install jq)
 
-url="http://hamcloud.info:8090/status"
+url="http://hamcloud.xxxx:xxx/status"
 
 function print_table()
 {
