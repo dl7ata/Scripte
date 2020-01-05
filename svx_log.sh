@@ -1,23 +1,25 @@
 #!/bin/bash
 # svx_log.sh	Erstellen eines svxlink-Lgs nach Echolinkverbindungen, Ausgabe in eine Datei pro Monat
-#		17.10.2019	Umstellung auf Vorbereitung der Daten mit grep
+#		05.01.2020	Korrektur ausgehende EL-Verbindungen
+#		17.10.2019	Holen der Daten mit grep
 #		04.07.2019	Berechnen Connect-Dauer
 # DL7ATA	10.06.2019
 #
-# Pfade und Dateien anpassan
+# Pfade und Dateien anpassen
 PFAD='/var/log/'
 DATEI='svxlink'
-KUM_LOG='/home/svxlink/svx-log/'
+KUM_LOG='/home/svxlink/SvxSystem/svx-log/'
+#---------------------------------------------------
+lfd_monat=$(date +%y%m)
 KUM_LOGPFAD="${KUM_LOG}svx_log.$lfd_monat.log"
 LOGFILE=${PFAD}${DATEI}
-
-S1=" CONNECTED"
+#---------------------------------------------------
+S1="changed to CONNECT"
 S2="Incoming"
 S3="Accepting"
 S4=" DISCONNECTED"
 declare -a log_array
 typeset -i i=0
-lfd_monat=$(date +%y%m)
 
 LOGFILE=${PFAD}${DATEI}
 
@@ -41,6 +43,10 @@ do
   elif [ "$inbound" == "Incoming" ] ; then
     talker_from=$(echo $text | cut -d" " -f7-8)
 
+  elif [[ $text == *"CONNECTING"* ]] ; then
+    talker_from=$(echo $text | cut -d" " -f3)
+    talker_el_id="outbound"
+
   elif [[ $text == *" CONNECTED"* ]]; then
     talker_date=$(echo $text | cut -d":" -f1-3)
     zeitON=$(echo $text | cut -c12-19)
@@ -52,8 +58,8 @@ do
     :
   fi
 
-#  counter=$(( $counter + 1 ))
-#  echo -e "$counter \r\c"
+  #counter=$(( $counter + 1 ))
+  #echo -e "$counter \r\c"
 
   if [ -n "$text_msg" ]; then
     z1=$(echo $(($zeitoff-$zeiton)))
