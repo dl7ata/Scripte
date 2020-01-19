@@ -35,9 +35,3 @@ z=$((scr_end - $scr_start))
 echo -e "\nfertig  in $((z % 3600 /60)) min, $((z % 60)) s"
 
 exit
-
-
-#t="18.01.2020 08:00:01"
-#t="18.01.2020"
-#date -d $t +%M%D%Y
-# echo $(date -d "$t" +%Y%m%d)
