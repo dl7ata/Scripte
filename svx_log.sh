@@ -1,9 +1,19 @@
 #!/bin/bash
 # svx_log.sh	Erstellen eines svxlink-Lgs nach Echolinkverbindungen, Ausgabe in eine Datei pro Monat
+#		21.12.2020	"Rejected" in der Auswahl berücksichtigen
 #		05.01.2020	Korrektur ausgehende EL-Verbindungen
 #		17.10.2019	Holen der Daten mit grep
 #		04.07.2019	Berechnen Connect-Dauer
 # DL7ATA	10.06.2019
+#--------------------------------------------------------------------
+#   Event		Feld			Inhalt		Feld
+#1. Incoming		talker_from		Call		S2
+#2.
+#a	Accepting	talker_el_id	EL-Nummer		S3
+#b	Rejecting	talker_el_id	EL-Nummer		S5
+#3. CONNECTED		talker_date	Startzeit merken	S1
+#4. DISCONNECTED	talker_date	Laufzeit ermitteln	S4
+#--------------------------------------------------------------------
 #
 # Pfade und Dateien anpassen
 PFAD='/var/log/'
@@ -17,13 +27,14 @@ LOGFILE=${PFAD}${DATEI}
 S1="changed to CONNECT"
 S2="Incoming"
 S3="Accepting"
+S5="Rejecting"
 S4=" DISCONNECTED"
 declare -a log_array
 typeset -i i=0
 
 LOGFILE=${PFAD}${DATEI}
 
-grep "$S1\|$S2\|$S3\|$S4" "$LOGFILE" | while read text
+grep "$S1\|$S2\|$S3\|$S4\|$S5" "$LOGFILE" | while read text
 do
   text_msg=''
   d_svx=$(echo $text | cut -c 12-19) #cut -d" " -f2)
@@ -36,9 +47,14 @@ do
     zeitoff=`date --utc --date "$zeitOFF" +%s`
     talker=$(echo $text | cut -d":" -f4)
     text_msg="$talker_con"
+    talker_from=''
 
   elif [[ $text == *"Accepting"* ]]; then
     talker_el_id=$(echo $text | cut -d" " -f9)
+
+  elif [[ $text == *"Rejecting"* ]] ; then
+    talker_from=$(echo $text | cut -d" " -f6)
+    talker_el_id="Rejecting"
 
   elif [ "$inbound" == "Incoming" ] ; then
     talker_from=$(echo $text | cut -d" " -f7-8)
@@ -63,7 +79,8 @@ do
 
   if [ -n "$text_msg" ]; then
     z1=$(echo $(($zeitoff-$zeiton)))
-    talk_zeit=$(echo "$((z1 % 3600 /60)) min $((z1 % 60)) s")
+
+  talk_zeit=$(echo "$((z1 / 3600)):$((z1 % 3600 /60)):$((z1 % 60))")
     echo -e "$talker_con|EL-Id $talker_el_id|Ende: $d_svx|/ $talk_zeit" | awk -F '|' '{ printf ("%-45.45s%19.19s%15s%-25.25s\n", $1 ,$2 ,$3, " " $4)}' >> $KUM_LOGPFAD
 
   fi
