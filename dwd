@@ -1,8 +1,11 @@
-#!/bin/bash -eu
+#!/bin/bash
 #-----------------------------------------------------------------------------------------------------------------
 # Script zur Suche nach Wetterwarnunggen vom DWD anhand einer Region (z.B. BXXX=Berlin)
 # Quelle: https://www.dwd.de/DE/leistungen/opendata/help/inhalt_allgemein/opendata_content_de_en_xls.xls?__blob=publicationFile&v=18
 #
+# 06.04.2022	Bugfixing: Filtern mit sed von x0D
+# 07.03.2021	Zurück zu Mary-TTS (Ggl. hat gekündigt)
+# 31.12.2019	Änderung auf "2m"
 # 18.10.2019	Umstellung wget, ergänzt um --no-check-certificate
 # 29.09.2019	Meldung "Vorabinformation" -> Kleinbuchstaben und Text kürzen
 # 17.09.2019	Meldung kürzen und "bis_text" suchen
@@ -14,7 +17,7 @@
 #------------------individuelle Anpassungen-Anfang----------------------------
 CALL="DB0TGO"
 TYP="txt"	#Lange Textfassung - gut für TTS/svxlink, "sms" ideal für APRS
-PFAD=/tmp
+PFAD=/tmp/wx_msg
 FILE="dwd.msg"
 REGION="PD" 	#PD Potsdam f. B/BB, SU Stuttgart,...
 QTH="BXXX"  	#BXHX f. Bln-Reinickendorf, BXXX f. Berlin, FRXF Freiburg
@@ -31,7 +34,7 @@ d=$(date +%m%d.%H:%M:%S)
 
 # Das Verzeichnis vom DWD mit weiteren möglichen Meldungsdateien holen
 /usr/bin/wget -q --no-check-certificate -O $PFAD/$FILE $link
-mkdir -p $PFAD/wx_msg/
+mkdir -p $PFAD/
 
 IFS=$'\n'
 array=$(cat $PFAD/$FILE )
@@ -43,96 +46,77 @@ for item in $array; do
 		warn=$(echo $ort | cut -b1-2)
 
 	    	# prüfen ob schon vorhanden und eine WW (Wetterwarnung)
-	     if [[ ! -s "$PFAD/wx_msg/dwd_msg.$ort" ]] && [[ $warn == "WJ" || $warn == "WD" ]]
+	     if [[ ! -s "$PFAD/dwd_msg.$ort" ]] && [[ $warn == "WJ" || $warn == "WD" ]]
 		then
 		#Noch nicht vorhanden, baue kompletten Dateinamen zusammen und hole eigentliche Meldungsdatei; wg. Umlauten von ISO nach UTF wandeln
-		/usr/bin/wget -q --no-check-certificate -O $PFAD/wx_msg/dwd_msg.T$ort $link/$ort
-		iconv -f ISO-8859-1 -t UTF-8 $PFAD/wx_msg/dwd_msg.T$ort -o $PFAD/wx_msg/dwd_msg.$ort
-		rm $PFAD/wx_msg/dwd_msg.T$ort
+		/usr/bin/wget -q --no-check-certificate -O $PFAD/dwd_msg.T$ort $link/$ort
+		iconv -f ISO-8859-1 -t UTF-8 $PFAD/dwd_msg.T$ort -o $PFAD/dwd_msg.$ort
+		rm $PFAD/dwd_msg.T$ort
 		echo "$d: $REGION $QTH / $ort"
 
 		# Prüfen ob es sich um eine AUFHEBUNG handelt
 		var="AUFHEBUNG"
-		messageT=$(cat $PFAD/wx_msg/dwd_msg.$ort)
+		messageT=$(cat $PFAD/dwd_msg.$ort)
 		if [ -z "${messageT%%*${var}*}" ]; then
-		   echo -e "Meldung ist eine $var\n"
+		   echo -e "$d: Meldung ist eine $var"
 		else
-
 			bis_text="Detaillierte"			#Meldung kürzen bis
-			if grep -q "$bis_text" $PFAD/wx_msg/dwd_msg.$ort; then
-				sed -i "/${bis_text}/,//d" $PFAD/wx_msg/dwd_msg.$ort
+			if grep -q "$bis_text" $PFAD/dwd_msg.$ort; then
+				sed -i "/${bis_text}/,//d" $PFAD/dwd_msg.$ort
 			fi
 
     			bis_text="ACHTUNG"
-			if grep -q "$bis_text" $PFAD/wx_msg/dwd_msg.$ort; then
-				sed -i "/${bis_text}/,//d" $PFAD/wx_msg/dwd_msg.$ort
+			if grep -q "$bis_text" $PFAD/dwd_msg.$ort; then
+				sed -i "/${bis_text}/,//d" $PFAD/dwd_msg.$ort
 	   		fi
 
 			if [[ $warn == "WJ" ]]
 			   then
 			   #Audioaufbereitung
 			   #In dieser Variablen steckt die gesamte Nachricht die von MARY in eine WAV gewandelt werden soll
-			   messageT=$(cat $PFAD/wx_msg/dwd_msg.$ort | \
+			   messageT=$(cat $PFAD/dwd_msg.$ort | \
 				sed -n "/Amtliche/,//p" | \
-				sed -e 's/^[ \t]*//;s/m\/s/ meter pro sekunde /g;s/kn/ Knoten /g;s/Bft/Boo Fohr/g;s/l\/m\²/Liter pro Quadratmeter/g' | \
-				sed '$d')
+				sed -e 's/^[ \t]*//;s/m\/s/ meter pro sekunde /g;s/kn/ Knoten /g;s/Bft/Boo Fohr/g;s/l\/m\²/Liter pro Quadratmeter/g;s/\�C/Grad Celsius/' | \
+				sed '/Temperatur/s/-/minus /g' | \
+				sed 's/-/minus /g' | \
+				sed '$d' | \
+				sed 's/\x0D//g')
 
 			elif  [[ $warn == "WD" ]]
 			   then
 	    		   bis_text="Dies"
-			   messageT=$(cat $PFAD/wx_msg/dwd_msg.$ort | \
+			   messageT=$(cat $PFAD/dwd_msg.$ort | \
 				sed -n "/VORABINFORMATION/,//p" | \
 				sed -e 's/^[ \t]*//;s/m\/s/ meter pro sekunde /g;s/kn/ Knoten /g;s/Bft/Beaufort/g;s/l\/qm/ Liter pro Quadratmeter/g' | \
-				sed "/${bis_text}/,//d" | tr "[A-Z]" "[a-z]")
+				sed "/${bis_text}/,//d" | tr "[A-Z]" "[a-z]" | \
+				sed 's/\x0D//g')
 			else
 			   echo "Typ $warn unbekannt - beende"
 			   exit
 			fi
 
 		# TTS STart
-		export GOOGLE_APPLICATION_CREDENTIALS="/home/svxlink/TTS/My.json"
+		echo ${messageT} > ${PFAD}/msg.tmp
+		/home/svxlink/TTS/tts.sh "${messageT}" "f"
 
-		curl -s -H "Authorization: Bearer "$(gcloud --quiet auth application-default print-access-token) \
-  -H "Content-Type: application/json; charset=iso-8859-1" \
-  --data "{
-    'input':{
-      'text':'$messageT'
-    },
-    'voice':{
-      'languageCode':'de-de',
-      'name':'$name',
-      'ssmlGender':'$gender'
-    },
-    'audioConfig':{
-      'audioEncoding':'LINEAR16',
-      'volumeGainDb':'2.0'
-    }
-  }" "https://texttospeech.googleapis.com/v1/text:synthesize" > $PFAD/synthesize-text.txt
-
-
-		cat $PFAD/synthesize-text.txt |  cut -d"\"" -f4 |  sed '1d' | sed '$d' > $PFAD/temp.txt
-		base64 $PFAD/temp.txt --decode > $PFAD/audio.file
-		sox $PFAD/audio.file -r 16k -b 16 -c 1 $PFAD/$wav
-		rm -f $PFAD/temp.txt $PFAD/synthesize-text.txt $PFAD/audio.file
-		# TTS Ende
-
-		cp $PFAD/$wav /var/spool/svxlink/weatherinfo/$CALL.$ort.wav
+		cp /tmp/$wav /var/spool/svxlink/weatherinfo/$CALL.$ort.wav
 		echo $messageT > /var/spool/svxlink/weatherinfo/$CALL.$ort.info
 
 		# Parallele Ausgabe auf Remotelogic aufbereiten
-		call=$CALL"-2m"
-		cp $PFAD/$wav /var/spool/svxlink/weatherinfo/$call.$ort.wav
+		call=$CALL"2m"
+		cp /tmp/$wav /var/spool/svxlink/weatherinfo/$call.$ort.wav
 		echo $messageT > /var/spool/svxlink/weatherinfo/$call.$ort.info
 
-		rm $PFAD/$wav
+		rm /tmp/$wav
+		sleep 60
 
 	     fi
 	   fi
-	   /home/svxlink/Wetter/wx_warn.py >> /tmp/wx_warn.tmp
+	   # export OPENSSL_CONF=/non-existing-file;/home/svxlink/Scripte/Wetter/dwd.py > /tmp/wx_warn.tmp
 	fi
 done
 
 # löschen alter Meldungen (> 14 Tage)
-find $PFAD/wx_msg -name 'dwd_msg.*' -mtime +14 -exec rm {} \;
+find $PFAD/ -name 'dwd_msg.*' -mtime +14 -exec rm {} \;
 
 exit 0
