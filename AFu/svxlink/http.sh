@@ -107,7 +107,7 @@ do
 
     # Ausgabe an Wemos senden
     text_msg="$d_svx   svx${text_msg}   $talker"
-    resp=$(curl -sio /dev/null  --connect-timeout 1,5 --head -f "http://192.168.10.181/$text_msg" -w '%{http_code}')
+    resp=$(curl -sio /dev/null  --connect-timeout 1,5 --head -f "http://<IP-des-ESP32>/$text_msg" -w '%{http_code}')
 
     # Falls esp aus ist, Timeout abfangen
     if [ $? != 0 ]; then
