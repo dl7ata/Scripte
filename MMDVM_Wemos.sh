@@ -39,7 +39,7 @@ while true; do
      dmr_mesz=$(date -d "@$dmr_timeS" "+%H:%M:%S")
      # echo -e "$dmr_time / $dmr_timeS / $dmr_mesz\n"
      text_out="$dmr_mesz: DMR   $text_msg"
-     resp=$(curl -i -o /dev/null  --connect-timeout 1,0 -s --show-error --head -f "http://192.168.10.181/$text_out" -w '%{http_code}')
+     resp=$(curl -i -o /dev/null  --connect-timeout 1,0 -s --show-error --head -f "http://<IP>/$text_out" -w '%{http_code}')
 
    # Falls esp aus ist, Timeout abfangen
    if [ $? != 0 ]

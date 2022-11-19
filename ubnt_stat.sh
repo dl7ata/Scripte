@@ -12,7 +12,7 @@ datei="/tmp/ubnt.stat"
 
 while true; do
 
-ssh -x ubnt@192.168.10.52 "cat /var/tmp/stats/wstalist" > $datei
+ssh -x ubnt@<IP> "cat /var/tmp/stats/wstalist" > $datei
 rx=$(cat $datei)
 
 if [ "$rx" == "$ohne_verbindung" ]; then
